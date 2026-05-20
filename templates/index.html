@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>자동차세 1월 연납 계산기</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px 48px;
+    }
+
+    .container { width: 100%; max-width: 620px; }
+
+    h1 {
+      text-align: center;
+      color: #fff;
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #a0b0c8;
+      font-size: 0.82rem;
+      margin-bottom: 24px;
+    }
+
+    /* ── 카드 ── */
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 28px 28px 24px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+    }
+
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #0f3460;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* ── 폼 ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px 20px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #444;
+    }
+    label .hint { font-weight: 400; color: #999; margin-left: 4px; }
+
+    /* 토글 라디오 버튼 */
+    .toggle-group { display: flex; gap: 8px; }
+    .toggle-group input[type=radio] { display: none; }
+    .toggle-btn {
+      flex: 1;
+      text-align: center;
+      padding: 10px 6px;
+      border: 2px solid #e0e0e0;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #aaa;
+      transition: all 0.18s;
+      user-select: none;
+    }
+    .toggle-group input[type=radio]:checked + .toggle-btn {
+      border-color: #0f3460;
+      background: #0f3460;
+      color: #fff;
+    }
+
+    /* select / input */
+    select, input[type=number], input[type=date] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 9px;
+      font-size: 0.92rem;
+      color: #222;
+      background: #fff;
+      transition: border-color 0.18s;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+    select:focus, input:focus { border-color: #0f3460; }
+
+    /* 계산 버튼 */
+    .btn-calc {
+      width: 100%;
+      margin-top: 20px;
+      padding: 13px;
+      background: linear-gradient(90deg, #0f3460, #533483);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.97rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.03em;
+      transition: opacity 0.18s;
+    }
+    .btn-calc:hover { opacity: 0.87; }
+
+    .error-msg {
+      color: #e53935;
+      font-size: 0.82rem;
+      margin-top: 10px;
+      min-height: 18px;
+      text-align: center;
+    }
+
+    /* ── 결과 ── */
+    .result { display: none; margin-top: 24px; }
+    .result.show { display: block; }
+
+    hr.divider { border: none; border-top: 1px solid #eee; margin: 20px 0; }
+
+    .meta-row {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .meta-item {
+      background: #f4f6fb;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.8rem;
+      color: #555;
+    }
+    .meta-item strong { color: #0f3460; }
+
+    /* 결과 테이블 */
+    .res-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .res-table th {
+      padding: 10px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fff;
+      background: #0f3460;
+    }
+    .res-table th:first-child { text-align: left; border-radius: 8px 0 0 0; }
+    .res-table th:last-child  { border-radius: 0 8px 0 0; }
+    .res-table th:not(:first-child) { text-align: right; }
+
+    .res-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      color: #333;
+    }
+    .res-table td:first-child { color: #555; font-size: 0.82rem; }
+    .res-table td:not(:first-child) { text-align: right; font-weight: 600; }
+
+    .res-table tr.sep td { background: #f8f9fc; font-style: italic; color: #aaa !important; font-size: 0.78rem !important; font-weight: 400 !important; padding: 4px 12px; }
+
+    .res-table tr.edu td:not(:first-child) { color: #888; font-weight: 500; }
+
+    .res-table tr.total-row td {
+      background: #eef2ff;
+      font-weight: 700;
+      color: #0f3460 !important;
+      font-size: 0.92rem;
+      border-bottom: none;
+    }
+    .res-table tr.total-row td:first-child { border-radius: 0 0 0 8px; }
+    .res-table tr.total-row td:last-child  { border-radius: 0 0 8px 0; }
+
+    .grand-box {
+      margin-top: 14px;
+      background: linear-gradient(90deg, #0f3460, #533483);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #fff;
+    }
+    .grand-box .label { font-size: 0.9rem; font-weight: 600; opacity: 0.85; }
+    .grand-box .amount { font-size: 1.3rem; font-weight: 800; }
+
+    /* ── 소유권이전 환급 ── */
+    .transfer-wrap {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px dashed #e0e0e0;
+    }
+    .transfer-check-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #444;
+      user-select: none;
+    }
+    .transfer-check-label input[type=checkbox] {
+      width: 16px;
+      height: 16px;
+      accent-color: #0f3460;
+      cursor: pointer;
+    }
+    .transfer-date-wrap {
+      margin-top: 12px;
+    }
+    .transfer-date-wrap label {
+      margin-bottom: 7px;
+    }
+
+    .refund-box {
+      margin-top: 12px;
+      background: #f1fdf4;
+      border: 1.5px solid #66bb6a;
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .refund-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #2e7d32;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    .refund-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px dashed #c8e6c9;
+      font-size: 0.85rem;
+      color: #555;
+    }
+    .refund-row:last-child { border-bottom: none; }
+    .refund-row .rv { font-weight: 600; color: #2e7d32; }
+    .refund-row.main-refund { margin-top: 4px; }
+    .refund-row.main-refund .rv { font-size: 1.1rem; }
+
+    .notice {
+      margin-top: 14px;
+      background: #fff8e1;
+      border-left: 3px solid #f9a825;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 0.76rem;
+      color: #7a6020;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 480px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>자동차세 1월 연납 계산기</h1>
+  <p class="subtitle">지방세법 기준&nbsp;·&nbsp;지방교육세 포함</p>
+
+  <div class="card">
+
+    <!-- ── 입력 폼 ── -->
+    <p class="section-title">차량 정보 입력</p>
+
+    <div class="form-grid">
+
+      <!-- 용도 -->
+      <div class="form-group">
+        <label>용도</label>
+        <div class="toggle-group">
+          <input type="radio" name="usage" id="u-non" value="non-business" checked>
+          <label for="u-non" class="toggle-btn">비영업용</label>
+          <input type="radio" name="usage" id="u-biz" value="business">
+          <label for="u-biz" class="toggle-btn">영업용</label>
+        </div>
+      </div>
+
+      <!-- 차종 -->
+      <div class="form-group">
+        <label for="vehicle-type">차종</label>
+        <select id="vehicle-type">
+          <option value="passenger">승용차</option>
+          <option value="van">승합차</option>
+          <option value="special">특수차</option>
+        </select>
+      </div>
+
+      <!-- 차령기산일 -->
+      <div class="form-group">
+        <label for="base-date">차령기산일 <span class="hint">(최초등록일)</span></label>
+        <input type="date" id="base-date" max="{{ today }}" />
+      </div>
+
+      <!-- 과세표준 -->
+      <div class="form-group">
+        <label for="tax-base">과세표준 <span class="hint">(cc)</span></label>
+        <input type="number" id="tax-base" placeholder="예: 1998" min="1" max="10000" />
+      </div>
+
+    </div><!-- /form-grid -->
+
+    <!-- 소유권이전 환급 토글 -->
+    <div class="transfer-wrap">
+      <label class="transfer-check-label">
+        <input type="checkbox" id="chk-transfer" onchange="toggleTransfer(this)">
+        소유권이전에 따른 환급액 계산 추가
+      </label>
+      <div id="transfer-date-wrap" class="transfer-date-wrap" style="display:none">
+        <label for="transfer-date">소유권이전일자</label>
+        <input type="date" id="transfer-date" max="{{ today }}" />
+      </div>
+    </div>
+
+    <button class="btn-calc" onclick="calc()">계산하기</button>
+    <p class="error-msg" id="err"></p>
+
+    <!-- ── 결과 ── -->
+    <div class="result" id="result">
+      <hr class="divider" />
+      <p class="section-title">계산 결과</p>
+
+      <!-- 메타 정보 -->
+      <div class="meta-row">
+        <div class="meta-item">cc당 세율 <strong id="m-rate"></strong></div>
+        <div class="meta-item">상반기 차령 <strong id="m-age1"></strong></div>
+        <div class="meta-item">하반기 차령 <strong id="m-age2"></strong></div>
+        <div class="meta-item">연납공제율 <strong id="m-disc"></strong></div>
+      </div>
+
+      <table class="res-table">
+        <thead>
+          <tr>
+            <th>항목</th>
+            <th>상반기 (1~6월)</th>
+            <th>하반기 (7~12월)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>① 과세표준 × 세율</td>
+            <td id="r1-h1"></td>
+            <td id="r1-h2"></td>
+          </tr>
+          <tr class="sep"><td colspan="3">차령경감율 적용 (<span id="s-red1"></span> / <span id="s-red2"></span>)</td></tr>
+          <tr>
+            <td>② × 차령경감율</td>
+            <td id="r2-h1"></td>
+            <td id="r2-h2"></td>
+          </tr>
+          <tr class="sep"><td colspan="3">연납공제 차감 (<span id="s-disc"></span>)</td></tr>
+          <tr>
+            <td>③ × 연납할인율</td>
+            <td id="r3-h1"></td>
+            <td id="r3-h2"></td>
+          </tr>
+          <tr class="edu">
+            <td>지방교육세 (30%)</td>
+            <td id="r4-h1"></td>
+            <td id="r4-h2"></td>
+          </tr>
+          <tr class="total-row">
+            <td>납부세액 (③ + 교육세)</td>
+            <td id="r5-h1"></td>
+            <td id="r5-h2"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grand-box">
+        <span class="label">1월 연납 총 납부세액</span>
+        <span class="amount" id="grand-total"></span>
+      </div>
+
+      <!-- 환급 결과 -->
+      <div id="refund-box" class="refund-box" style="display:none">
+        <p class="refund-title">소유권이전에 따른 연납세액 환급 (일할계산)</p>
+        <div class="refund-row">
+          <span>소유권이전일자</span>
+          <span class="rv" id="r-transfer-date"></span>
+        </div>
+        <div class="refund-row">
+          <span>환급 대상일수 <small style="color:#aaa">(이전일 다음날 ~ 12.31)</small></span>
+          <span class="rv" id="r-refund-days"></span>
+        </div>
+        <div class="refund-row">
+          <span>해당연도 총일수</span>
+          <span class="rv" id="r-total-days"></span>
+        </div>
+        <div class="refund-row main-refund">
+          <span>환급세액</span>
+          <span class="rv" id="r-refund-amount"></span>
+        </div>
+      </div>
+
+      <div class="notice">
+        * 비영업용 승용차 기준: 상반기 기준일 1월 1일, 하반기 기준일 7월 1일로 차령 산정<br>
+        * 차령경감: 만 3년부터 매년 5%씩 최대 50% 경감 (12년 이상)<br>
+        * 연납공제율·세율은 지방자치단체 조례에 따라 달라질 수 있습니다<br>
+        * 정확한 금액은 위택스(wetax.go.kr)에서 확인하세요
+      </div>
+    </div><!-- /result -->
+
+  </div><!-- /card -->
+</div>
+
+<script>
+  const fmt = n => Number(n).toLocaleString('ko-KR') + '원';
+
+  function toggleTransfer(chk) {
+    document.getElementById('transfer-date-wrap').style.display = chk.checked ? 'block' : 'none';
+    if (!chk.checked) {
+      document.getElementById('transfer-date').value = '';
+      document.getElementById('refund-box').style.display = 'none';
+    }
+  }
+
+  async function calc() {
+    const usage        = document.querySelector('input[name=usage]:checked').value;
+    const vehicleType  = document.getElementById('vehicle-type').value;
+    const baseDate     = document.getElementById('base-date').value;
+    const cc           = document.getElementById('tax-base').value;
+    const transferDate = document.getElementById('transfer-date').value;
+    const errEl        = document.getElementById('err');
+    const resultEl     = document.getElementById('result');
+
+    errEl.textContent = '';
+    resultEl.classList.remove('show');
+
+    if (!baseDate || !cc) {
+      errEl.textContent = '차령기산일과 과세표준을 모두 입력해주세요.';
+      return;
+    }
+
+    const payload = { usage, vehicle_type: vehicleType, base_date: baseDate, cc: parseInt(cc) };
+    if (transferDate) payload.transfer_date = transferDate;
+
+    const res  = await fetch('/calculate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    if (!res.ok) { errEl.textContent = data.error || '오류가 발생했습니다.'; return; }
+
+    // 메타
+    document.getElementById('m-rate').textContent = data.rate_per_cc.toLocaleString() + '원/cc';
+    document.getElementById('m-age1').textContent = data.age_h1 + '년';
+    document.getElementById('m-age2').textContent = data.age_h2 + '년';
+    document.getElementById('m-disc').textContent = data.discount_pct + '%';
+
+    // 구분 라인 텍스트
+    document.getElementById('s-red1').textContent = '상반기 ' + data.h1.reduction_pct + '%';
+    document.getElementById('s-red2').textContent = '하반기 ' + data.h2.reduction_pct + '%';
+    document.getElementById('s-disc').textContent = data.discount_pct + '%';
+
+    // 표 셀
+    const set = (id, val) => document.getElementById(id).textContent = fmt(val);
+    set('r1-h1', data.h1.step1);  set('r1-h2', data.h2.step1);
+    set('r2-h1', data.h1.step2);  set('r2-h2', data.h2.step2);
+    set('r3-h1', data.h1.step3);  set('r3-h2', data.h2.step3);
+    set('r4-h1', data.h1.edu);    set('r4-h2', data.h2.edu);
+    set('r5-h1', data.h1.total);  set('r5-h2', data.h2.total);
+
+    document.getElementById('grand-total').textContent = fmt(data.grand_total);
+
+    // 환급 결과
+    const refundBox = document.getElementById('refund-box');
+    if (data.refund) {
+      const r = data.refund;
+      document.getElementById('r-transfer-date').textContent = r.transfer_date;
+      document.getElementById('r-refund-days').textContent   = r.refund_days + '일';
+      document.getElementById('r-total-days').textContent    = r.total_days + '일';
+      document.getElementById('r-refund-amount').textContent = fmt(r.refund_amount);
+      refundBox.style.display = 'block';
+    } else {
+      refundBox.style.display = 'none';
+    }
+
+    resultEl.classList.add('show');
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+</script>
+</body>
+</html>
