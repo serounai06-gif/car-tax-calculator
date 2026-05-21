@@ -33,7 +33,6 @@
       margin-bottom: 24px;
     }
 
-    /* ── 카드 ── */
     .card {
       background: #fff;
       border-radius: 18px;
@@ -50,7 +49,6 @@
       margin-bottom: 16px;
     }
 
-    /* ── 폼 ── */
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -66,7 +64,7 @@
     }
     label .hint { font-weight: 400; color: #999; margin-left: 4px; }
 
-    /* 토글 라디오 버튼 */
+    /* 토글 라디오 버튼 (용도 - 2개) */
     .toggle-group { display: flex; gap: 8px; }
     .toggle-group input[type=radio] { display: none; }
     .toggle-btn {
@@ -88,6 +86,19 @@
       color: #fff;
     }
 
+    /* 차종 토글 - 6개 (3열 2행 그리드) */
+    .vt-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .vt-group input[type=radio] { display: none; }
+    .vt-group input[type=radio]:checked + .toggle-btn {
+      border-color: #533483;
+      background: #533483;
+      color: #fff;
+    }
+
     /* select / input */
     select, input[type=number], input[type=date] {
       width: 100%;
@@ -102,8 +113,28 @@
       appearance: none;
       -webkit-appearance: none;
     }
-    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
     select:focus, input:focus { border-color: #0f3460; }
+
+    /* 세율 표시 배지 */
+    .rate-badge {
+      padding: 10px 14px;
+      background: #f0f4ff;
+      border: 2px solid #c7d4f0;
+      border-radius: 9px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #0f3460;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+    }
+    .rate-badge.active { border-color: #533483; color: #533483; background: #f5f0ff; }
 
     /* 계산 버튼 */
     .btn-calc {
@@ -130,7 +161,7 @@
       text-align: center;
     }
 
-    /* ── 결과 ── */
+    /* 결과 */
     .result { display: none; margin-top: 24px; }
     .result.show { display: block; }
 
@@ -138,20 +169,19 @@
 
     .meta-row {
       display: flex;
-      gap: 20px;
+      gap: 10px;
       flex-wrap: wrap;
       margin-bottom: 16px;
     }
     .meta-item {
       background: #f4f6fb;
       border-radius: 8px;
-      padding: 8px 14px;
+      padding: 8px 12px;
       font-size: 0.8rem;
       color: #555;
     }
     .meta-item strong { color: #0f3460; }
 
-    /* 결과 테이블 */
     .res-table {
       width: 100%;
       border-collapse: collapse;
@@ -165,8 +195,9 @@
       background: #0f3460;
     }
     .res-table th:first-child { text-align: left; border-radius: 8px 0 0 0; }
-    .res-table th:last-child  { border-radius: 0 8px 0 0; }
+    .res-table th:last-child  { border-radius: 0 8px 0 0; background: #1a4a80; }
     .res-table th:not(:first-child) { text-align: right; }
+    .res-table td:last-child  { color: #0f3460 !important; font-weight: 700 !important; background: #f4f6fb; }
 
     .res-table td {
       padding: 10px 12px;
@@ -177,9 +208,7 @@
     .res-table td:not(:first-child) { text-align: right; font-weight: 600; }
 
     .res-table tr.sep td { background: #f8f9fc; font-style: italic; color: #aaa !important; font-size: 0.78rem !important; font-weight: 400 !important; padding: 4px 12px; }
-
     .res-table tr.edu td:not(:first-child) { color: #888; font-weight: 500; }
-
     .res-table tr.total-row td {
       background: #eef2ff;
       font-weight: 700;
@@ -189,6 +218,19 @@
     }
     .res-table tr.total-row td:first-child { border-radius: 0 0 0 8px; }
     .res-table tr.total-row td:last-child  { border-radius: 0 0 8px 0; }
+
+    .discount-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      font-size: 0.88rem;
+      color: #555;
+    }
+    .discount-row.deduct { color: #e53935; }
+    .discount-row .dl { }
+    .discount-row .dv { font-weight: 700; }
+    .discount-row small { font-size: 0.75rem; color: #aaa; margin-left: 4px; }
 
     .grand-box {
       margin-top: 14px;
@@ -203,7 +245,7 @@
     .grand-box .label { font-size: 0.9rem; font-weight: 600; opacity: 0.85; }
     .grand-box .amount { font-size: 1.3rem; font-weight: 800; }
 
-    /* ── 소유권이전 환급 ── */
+    /* 소유권이전 환급 */
     .transfer-wrap {
       margin-top: 18px;
       padding-top: 16px;
@@ -220,17 +262,12 @@
       user-select: none;
     }
     .transfer-check-label input[type=checkbox] {
-      width: 16px;
-      height: 16px;
+      width: 16px; height: 16px;
       accent-color: #0f3460;
       cursor: pointer;
     }
-    .transfer-date-wrap {
-      margin-top: 12px;
-    }
-    .transfer-date-wrap label {
-      margin-bottom: 7px;
-    }
+    .transfer-date-wrap { margin-top: 12px; }
+    .transfer-date-wrap label { margin-bottom: 7px; }
 
     .refund-box {
       margin-top: 12px;
@@ -274,40 +311,49 @@
     @media (max-width: 480px) {
       .form-grid { grid-template-columns: 1fr; }
       .form-group.full { grid-column: auto; }
+      .vt-group { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
 </head>
 <body>
 <div class="container">
   <h1>자동차세 1월 연납 계산기</h1>
-  <p class="subtitle">지방세법 기준&nbsp;·&nbsp;지방교육세 포함</p>
+  <p class="subtitle">지방세법 제127조 기준&nbsp;·&nbsp;지방교육세 포함</p>
 
   <div class="card">
 
-    <!-- ── 입력 폼 ── -->
     <p class="section-title">차량 정보 입력</p>
 
     <div class="form-grid">
 
       <!-- 용도 -->
-      <div class="form-group">
+      <div class="form-group full">
         <label>용도</label>
         <div class="toggle-group">
-          <input type="radio" name="usage" id="u-non" value="non-business" checked>
+          <input type="radio" name="usage" id="u-non" value="non-business" checked onchange="onFormChange()">
           <label for="u-non" class="toggle-btn">비영업용</label>
-          <input type="radio" name="usage" id="u-biz" value="business">
+          <input type="radio" name="usage" id="u-biz" value="business" onchange="onFormChange()">
           <label for="u-biz" class="toggle-btn">영업용</label>
         </div>
       </div>
 
       <!-- 차종 -->
-      <div class="form-group">
-        <label for="vehicle-type">차종</label>
-        <select id="vehicle-type">
-          <option value="passenger">승용차</option>
-          <option value="van">승합차</option>
-          <option value="special">특수차</option>
-        </select>
+      <div class="form-group full">
+        <label>차종</label>
+        <div class="vt-group">
+          <input type="radio" name="vt" id="vt-passenger"    value="passenger"    checked onchange="onFormChange()">
+          <label for="vt-passenger"    class="toggle-btn">승용</label>
+          <input type="radio" name="vt" id="vt-van"          value="van"          onchange="onFormChange()">
+          <label for="vt-van"          class="toggle-btn">승합</label>
+          <input type="radio" name="vt" id="vt-cargo"        value="cargo"        onchange="onFormChange()">
+          <label for="vt-cargo"        class="toggle-btn">화물</label>
+          <input type="radio" name="vt" id="vt-special"      value="special"      onchange="onFormChange()">
+          <label for="vt-special"      class="toggle-btn">특수</label>
+          <input type="radio" name="vt" id="vt-motorcycle"   value="motorcycle"   onchange="onFormChange()">
+          <label for="vt-motorcycle"   class="toggle-btn">이륜</label>
+          <input type="radio" name="vt" id="vt-construction" value="construction" onchange="onFormChange()">
+          <label for="vt-construction" class="toggle-btn">건설기계</label>
+        </div>
       </div>
 
       <!-- 차령기산일 -->
@@ -316,10 +362,22 @@
         <input type="date" id="base-date" max="{{ today }}" />
       </div>
 
-      <!-- 과세표준 -->
-      <div class="form-group">
-        <label for="tax-base">과세표준 <span class="hint">(cc)</span></label>
-        <input type="number" id="tax-base" placeholder="예: 1998" min="1" max="10000" />
+      <!-- 과세표준: CC 입력 (승용차) -->
+      <div class="form-group" id="wrap-cc">
+        <label for="tax-base">과세표준 <span class="hint">(배기량 cc)</span></label>
+        <input type="number" id="tax-base" placeholder="예: 1998" min="1" max="10000" oninput="updateRateBadge()" />
+      </div>
+
+      <!-- 과세표준: 세부종류 선택 (승합/화물/특수/이륜/건설기계) -->
+      <div class="form-group" id="wrap-sub" style="display:none">
+        <label for="sub-type">세부종류</label>
+        <select id="sub-type" onchange="updateRateBadge()"></select>
+      </div>
+
+      <!-- 세율 표시 -->
+      <div class="form-group full">
+        <label>적용 세율 <span class="hint">(지방세법 §127)</span></label>
+        <div class="rate-badge" id="rate-badge">차종과 과세표준을 선택하면 자동으로 표시됩니다</div>
       </div>
 
     </div><!-- /form-grid -->
@@ -339,14 +397,13 @@
     <button class="btn-calc" onclick="calc()">계산하기</button>
     <p class="error-msg" id="err"></p>
 
-    <!-- ── 결과 ── -->
+    <!-- 결과 -->
     <div class="result" id="result">
       <hr class="divider" />
       <p class="section-title">계산 결과</p>
 
-      <!-- 메타 정보 -->
       <div class="meta-row">
-        <div class="meta-item">cc당 세율 <strong id="m-rate"></strong></div>
+        <div class="meta-item">적용 세율 <strong id="m-rate"></strong></div>
         <div class="meta-item">상반기 차령 <strong id="m-age1"></strong></div>
         <div class="meta-item">하반기 차령 <strong id="m-age2"></strong></div>
         <div class="meta-item">연납공제율 <strong id="m-disc"></strong></div>
@@ -358,6 +415,7 @@
             <th>항목</th>
             <th>상반기 (1~6월)</th>
             <th>하반기 (7~12월)</th>
+            <th>합계</th>
           </tr>
         </thead>
         <tbody>
@@ -365,31 +423,38 @@
             <td>① 과세표준 × 세율</td>
             <td id="r1-h1"></td>
             <td id="r1-h2"></td>
+            <td id="r1-sum"></td>
           </tr>
-          <tr class="sep"><td colspan="3">차령경감율 적용 (<span id="s-red1"></span> / <span id="s-red2"></span>)</td></tr>
+          <tr class="sep"><td colspan="4">차령경감율 적용 (<span id="s-red1"></span> / <span id="s-red2"></span>)</td></tr>
           <tr>
             <td>② × 차령경감율</td>
             <td id="r2-h1"></td>
             <td id="r2-h2"></td>
-          </tr>
-          <tr class="sep"><td colspan="3">연납공제 차감 (<span id="s-disc"></span>)</td></tr>
-          <tr>
-            <td>③ × 연납할인율</td>
-            <td id="r3-h1"></td>
-            <td id="r3-h2"></td>
+            <td id="r2-sum"></td>
           </tr>
           <tr class="edu">
             <td>지방교육세 (30%)</td>
             <td id="r4-h1"></td>
             <td id="r4-h2"></td>
+            <td id="r4-sum"></td>
           </tr>
           <tr class="total-row">
-            <td>납부세액 (③ + 교육세)</td>
+            <td>기분 세액 (② + 교육세)</td>
             <td id="r5-h1"></td>
             <td id="r5-h2"></td>
+            <td id="r5-sum"></td>
           </tr>
         </tbody>
       </table>
+
+      <div class="discount-row">
+        <span class="dl">소계 (상반기 + 하반기)</span>
+        <span class="dv" id="subtotal"></span>
+      </div>
+      <div class="discount-row deduct">
+        <span class="dl">연납공제 <small id="disc-label"></small></span>
+        <span class="dv" id="discount-amt"></span>
+      </div>
 
       <div class="grand-box">
         <span class="label">1월 연납 총 납부세액</span>
@@ -418,9 +483,9 @@
       </div>
 
       <div class="notice">
-        * 비영업용 승용차 기준: 상반기 기준일 1월 1일, 하반기 기준일 7월 1일로 차령 산정<br>
+        * 세율은 지방세법 제127조 기준이며, 지자체 조례에 따라 달라질 수 있습니다<br>
         * 차령경감: 만 3년부터 매년 5%씩 최대 50% 경감 (12년 이상)<br>
-        * 연납공제율·세율은 지방자치단체 조례에 따라 달라질 수 있습니다<br>
+        * 상반기 기준일 1월 1일, 하반기 기준일 7월 1일로 차령 산정<br>
         * 정확한 금액은 위택스(wetax.go.kr)에서 확인하세요
       </div>
     </div><!-- /result -->
@@ -431,6 +496,121 @@
 <script>
   const fmt = n => Number(n).toLocaleString('ko-KR') + '원';
 
+  // ── 세부종류 옵션 (용도별, 지방세법 §127) ──
+  const SUB_OPTS = {
+    'non-business': {
+      van:          [
+        {v:'large_general', l:'대형일반버스'},
+        {v:'small_general', l:'소형일반버스'},
+      ],
+      cargo:        [
+        {v:'t1',  l:'1,000kg 이하'},
+        {v:'t2',  l:'2,000kg 이하'},
+        {v:'t3',  l:'3,000kg 이하'},
+        {v:'t4',  l:'4,000kg 이하'},
+        {v:'t5',  l:'5,000kg 이하'},
+        {v:'t8',  l:'8,000kg 이하'},
+        {v:'t10', l:'10,000kg 이하'},
+      ],
+      special:      [{v:'large', l:'대형특수자동차'}, {v:'small', l:'소형특수자동차'}],
+      motorcycle:   [{v:'default', l:'3톤 이하 소형'}],
+      construction: [{v:'large', l:'대형'}, {v:'small', l:'소형'}],
+    },
+    'business': {
+      van:          [
+        {v:'express',       l:'고속버스'},
+        {v:'large_charter', l:'대형전세버스'},
+        {v:'small_charter', l:'소형전세버스'},
+        {v:'large_general', l:'대형일반버스'},
+        {v:'small_general', l:'소형일반버스'},
+      ],
+      cargo:        [
+        {v:'t1',  l:'1,000kg 이하'},
+        {v:'t2',  l:'2,000kg 이하'},
+        {v:'t3',  l:'3,000kg 이하'},
+        {v:'t4',  l:'4,000kg 이하'},
+        {v:'t5',  l:'5,000kg 이하'},
+        {v:'t8',  l:'8,000kg 이하'},
+        {v:'t10', l:'10,000kg 이하'},
+      ],
+      special:      [{v:'large', l:'대형특수자동차'}, {v:'small', l:'소형특수자동차'}],
+      motorcycle:   [{v:'default', l:'3톤 이하 소형'}],
+      construction: [{v:'large', l:'대형'}, {v:'small', l:'소형'}],
+    },
+  };
+
+  // ── 세율표 (표시용, 지방세법 §127) ──
+  const RATE_TABLE = {
+    'non-business': {
+      passenger:    [{limit:1000, rate:80}, {limit:1600, rate:140}, {limit:null, rate:200}],
+      van:          {large_general:115000, small_general:65000},
+      cargo:        {t1:28500, t2:34500, t3:48000, t4:63000, t5:79500, t8:130500, t10:157500},
+      special:      {large:157500, small:58500},
+      motorcycle:   {default:18000},
+      construction: {large:36000, small:18000},
+    },
+    'business': {
+      passenger:    [{limit:1000, rate:18}, {limit:1600, rate:18}, {limit:2000, rate:19}, {limit:2500, rate:19}, {limit:null, rate:24}],
+      van:          {express:100000, large_charter:70000, small_charter:50000, large_general:42000, small_general:25000},
+      cargo:        {t1:6600, t2:9600, t3:13500, t4:18000, t5:22500, t8:36000, t10:45000},
+      special:      {large:36000, small:13500},
+      motorcycle:   {default:3300},
+      construction: {large:36000, small:18000},
+    },
+  };
+
+  function getUsage() {
+    return document.querySelector('input[name=usage]:checked').value;
+  }
+  function getVehicleType() {
+    return document.querySelector('input[name=vt]:checked').value;
+  }
+
+  function onFormChange() {
+    const vt    = getVehicleType();
+    const usage = getUsage();
+    const isCC  = vt === 'passenger';
+
+    document.getElementById('wrap-cc').style.display  = isCC ? '' : 'none';
+    document.getElementById('wrap-sub').style.display = isCC ? 'none' : '';
+
+    if (!isCC) {
+      const opts = (SUB_OPTS[usage] || {})[vt] || [];
+      const sel  = document.getElementById('sub-type');
+      sel.innerHTML = opts.map(o => `<option value="${o.v}">${o.l}</option>`).join('');
+    }
+
+    updateRateBadge();
+  }
+
+  function updateRateBadge() {
+    const vt    = getVehicleType();
+    const usage = getUsage();
+    const badge = document.getElementById('rate-badge');
+
+    if (vt === 'passenger') {
+      const cc    = parseInt(document.getElementById('tax-base').value) || 0;
+      const table = RATE_TABLE[usage].passenger;
+      if (cc <= 0) {
+        badge.textContent = '배기량을 입력하면 세율이 표시됩니다';
+        badge.classList.remove('active');
+        return;
+      }
+      const entry = table.find(e => e.limit === null || cc <= e.limit) || table[table.length - 1];
+      badge.textContent = `${entry.rate.toLocaleString()}원/cc  (연간 ${(cc * entry.rate).toLocaleString()}원)`;
+    } else {
+      const subType = document.getElementById('sub-type').value;
+      const amount  = (RATE_TABLE[usage][vt] || {})[subType];
+      if (amount === undefined) {
+        badge.textContent = '-';
+        badge.classList.remove('active');
+        return;
+      }
+      badge.textContent = `연 ${amount.toLocaleString()}원`;
+    }
+    badge.classList.add('active');
+  }
+
   function toggleTransfer(chk) {
     document.getElementById('transfer-date-wrap').style.display = chk.checked ? 'block' : 'none';
     if (!chk.checked) {
@@ -440,23 +620,25 @@
   }
 
   async function calc() {
-    const usage        = document.querySelector('input[name=usage]:checked').value;
-    const vehicleType  = document.getElementById('vehicle-type').value;
-    const baseDate     = document.getElementById('base-date').value;
-    const cc           = document.getElementById('tax-base').value;
+    const usage       = getUsage();
+    const vehicleType = getVehicleType();
+    const baseDate    = document.getElementById('base-date').value;
+    const isCC        = vehicleType === 'passenger';
+    const cc          = isCC ? document.getElementById('tax-base').value : null;
+    const subType     = !isCC ? document.getElementById('sub-type').value : null;
     const transferDate = document.getElementById('transfer-date').value;
-    const errEl        = document.getElementById('err');
-    const resultEl     = document.getElementById('result');
+    const errEl       = document.getElementById('err');
+    const resultEl    = document.getElementById('result');
 
     errEl.textContent = '';
     resultEl.classList.remove('show');
 
-    if (!baseDate || !cc) {
-      errEl.textContent = '차령기산일과 과세표준을 모두 입력해주세요.';
-      return;
-    }
+    if (!baseDate) { errEl.textContent = '차령기산일을 입력해주세요.'; return; }
+    if (isCC && !cc) { errEl.textContent = '배기량(cc)을 입력해주세요.'; return; }
 
-    const payload = { usage, vehicle_type: vehicleType, base_date: baseDate, cc: parseInt(cc) };
+    const payload = { usage, vehicle_type: vehicleType, base_date: baseDate };
+    if (isCC) payload.cc = parseInt(cc);
+    else payload.sub_type = subType;
     if (transferDate) payload.transfer_date = transferDate;
 
     const res  = await fetch('/calculate', {
@@ -469,34 +651,37 @@
     if (!res.ok) { errEl.textContent = data.error || '오류가 발생했습니다.'; return; }
 
     // 메타
-    document.getElementById('m-rate').textContent = data.rate_per_cc.toLocaleString() + '원/cc';
+    document.getElementById('m-rate').textContent = data.rate_display;
     document.getElementById('m-age1').textContent = data.age_h1 + '년';
     document.getElementById('m-age2').textContent = data.age_h2 + '년';
     document.getElementById('m-disc').textContent = data.discount_pct + '%';
 
-    // 구분 라인 텍스트
+    // 구분 라인
     document.getElementById('s-red1').textContent = '상반기 ' + data.h1.reduction_pct + '%';
     document.getElementById('s-red2').textContent = '하반기 ' + data.h2.reduction_pct + '%';
-    document.getElementById('s-disc').textContent = data.discount_pct + '%';
 
     // 표 셀
     const set = (id, val) => document.getElementById(id).textContent = fmt(val);
-    set('r1-h1', data.h1.step1);  set('r1-h2', data.h2.step1);
-    set('r2-h1', data.h1.step2);  set('r2-h2', data.h2.step2);
-    set('r3-h1', data.h1.step3);  set('r3-h2', data.h2.step3);
-    set('r4-h1', data.h1.edu);    set('r4-h2', data.h2.edu);
-    set('r5-h1', data.h1.total);  set('r5-h2', data.h2.total);
+    set('r1-h1', data.h1.step1);  set('r1-h2', data.h2.step1);  set('r1-sum', data.h1.step1 + data.h2.step1);
+    set('r2-h1', data.h1.step2);  set('r2-h2', data.h2.step2);  set('r2-sum', data.h1.step2 + data.h2.step2);
+    set('r4-h1', data.h1.edu);    set('r4-h2', data.h2.edu);    set('r4-sum', data.h1.edu   + data.h2.edu);
+    set('r5-h1', data.h1.total);  set('r5-h2', data.h2.total);  set('r5-sum', data.subtotal);
 
+    // 연납공제 및 합계
+    set('subtotal', data.subtotal);
+    document.getElementById('discount-amt').textContent = '- ' + fmt(data.discount_amt);
+    document.getElementById('disc-label').textContent =
+      `2~12월분 × ${data.discount_pct}% (11/12 적용)`;
     document.getElementById('grand-total').textContent = fmt(data.grand_total);
 
-    // 환급 결과
+    // 환급
     const refundBox = document.getElementById('refund-box');
     if (data.refund) {
       const r = data.refund;
-      document.getElementById('r-transfer-date').textContent = r.transfer_date;
-      document.getElementById('r-refund-days').textContent   = r.refund_days + '일';
-      document.getElementById('r-total-days').textContent    = r.total_days + '일';
-      document.getElementById('r-refund-amount').textContent = fmt(r.refund_amount);
+      document.getElementById('r-transfer-date').textContent  = r.transfer_date;
+      document.getElementById('r-refund-days').textContent    = r.refund_days + '일';
+      document.getElementById('r-total-days').textContent     = r.total_days + '일';
+      document.getElementById('r-refund-amount').textContent  = fmt(r.refund_amount);
       refundBox.style.display = 'block';
     } else {
       refundBox.style.display = 'none';
