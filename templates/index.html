@@ -208,6 +208,7 @@
     .res-table td:not(:first-child) { text-align: right; font-weight: 600; }
 
     .res-table tr.sep td { background: #f8f9fc; font-style: italic; color: #aaa !important; font-size: 0.78rem !important; font-weight: 400 !important; padding: 4px 12px; }
+    .res-table tr.discount-tr td:not(:first-child) { color: #e53935; font-weight: 600; }
     .res-table tr.edu td:not(:first-child) { color: #888; font-weight: 500; }
     .res-table tr.total-row td {
       background: #eef2ff;
@@ -427,10 +428,23 @@
           </tr>
           <tr class="sep"><td colspan="4">차령경감율 적용 (<span id="s-red1"></span> / <span id="s-red2"></span>)</td></tr>
           <tr>
-            <td>② × 차령경감율</td>
+            <td>② 반기별 산출세액</td>
             <td id="r2-h1"></td>
             <td id="r2-h2"></td>
             <td id="r2-sum"></td>
+          </tr>
+          <tr class="sep"><td colspan="4">연납공제 차감 (<span id="s-disc-h1"></span> / <span id="s-disc-h2"></span>)</td></tr>
+          <tr class="discount-tr">
+            <td>③ 연납공제</td>
+            <td id="r3-h1"></td>
+            <td id="r3-h2"></td>
+            <td id="r3-sum"></td>
+          </tr>
+          <tr>
+            <td>④ 공제 후 세액</td>
+            <td id="r3s-h1"></td>
+            <td id="r3s-h2"></td>
+            <td id="r3s-sum"></td>
           </tr>
           <tr class="edu">
             <td>지방교육세 (30%)</td>
@@ -439,22 +453,13 @@
             <td id="r4-sum"></td>
           </tr>
           <tr class="total-row">
-            <td>기분 세액 (② + 교육세)</td>
+            <td>납부세액 (④ + 교육세)</td>
             <td id="r5-h1"></td>
             <td id="r5-h2"></td>
             <td id="r5-sum"></td>
           </tr>
         </tbody>
       </table>
-
-      <div class="discount-row">
-        <span class="dl">소계 (상반기 + 하반기)</span>
-        <span class="dv" id="subtotal"></span>
-      </div>
-      <div class="discount-row deduct">
-        <span class="dl">연납공제 <small id="disc-label"></small></span>
-        <span class="dv" id="discount-amt"></span>
-      </div>
 
       <div class="grand-box">
         <span class="label">1월 연납 총 납부세액</span>
@@ -654,24 +659,29 @@
     document.getElementById('m-rate').textContent = data.rate_display;
     document.getElementById('m-age1').textContent = data.age_h1 + '년';
     document.getElementById('m-age2').textContent = data.age_h2 + '년';
-    document.getElementById('m-disc').textContent = data.discount_pct + '%';
+    document.getElementById('m-disc').textContent = data.interest_rate + '%';
 
     // 구분 라인
     document.getElementById('s-red1').textContent = '상반기 ' + data.h1.reduction_pct + '%';
     document.getElementById('s-red2').textContent = '하반기 ' + data.h2.reduction_pct + '%';
 
     // 표 셀
-    const set = (id, val) => document.getElementById(id).textContent = fmt(val);
-    set('r1-h1', data.h1.step1);  set('r1-h2', data.h2.step1);  set('r1-sum', data.h1.step1 + data.h2.step1);
-    set('r2-h1', data.h1.step2);  set('r2-h2', data.h2.step2);  set('r2-sum', data.h1.step2 + data.h2.step2);
-    set('r4-h1', data.h1.edu);    set('r4-h2', data.h2.edu);    set('r4-sum', data.h1.edu   + data.h2.edu);
-    set('r5-h1', data.h1.total);  set('r5-h2', data.h2.total);  set('r5-sum', data.subtotal);
+    const set  = (id, val) => document.getElementById(id).textContent = fmt(val);
+    const setN = (id, val) => document.getElementById(id).textContent = '- ' + fmt(val);
+    set('r1-h1',  data.h1.step1);   set('r1-h2',  data.h2.step1);   set('r1-sum',  data.h1.step1  + data.h2.step1);
+    set('r2-h1',  data.h1.step2);   set('r2-h2',  data.h2.step2);   set('r2-sum',  data.h1.step2  + data.h2.step2);
+    setN('r3-h1', data.h1.discount);setN('r3-h2', data.h2.discount); set('r3-sum',  data.h1.discount + data.h2.discount);
+    set('r3s-h1', data.h1.step3);   set('r3s-h2', data.h2.step3);   set('r3s-sum', data.h1.step3  + data.h2.step3);
+    set('r4-h1',  data.h1.edu);     set('r4-h2',  data.h2.edu);     set('r4-sum',  data.h1.edu    + data.h2.edu);
+    set('r5-h1',  data.h1.total);   set('r5-h2',  data.h2.total);   set('r5-sum',  data.grand_total);
 
-    // 연납공제 및 합계
-    set('subtotal', data.subtotal);
-    document.getElementById('discount-amt').textContent = '- ' + fmt(data.discount_amt);
-    document.getElementById('disc-label').textContent =
-      `2~12월분 × ${data.discount_pct}% (11/12 적용)`;
+    // 연납공제 구분 라인 설명
+    const h1_days = new Date(new Date().getFullYear(), 5, 30) - new Date(new Date().getFullYear(), 0, 1);
+    document.getElementById('s-disc-h1').textContent =
+      `상반기: 2~6월분 × ${data.interest_rate}%`;
+    document.getElementById('s-disc-h2').textContent =
+      `하반기: 7~12월 전체 × ${data.interest_rate}%`;
+
     document.getElementById('grand-total').textContent = fmt(data.grand_total);
 
     // 환급

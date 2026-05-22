@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from datetime import date
+import math
 
 app = Flask(__name__)
 
@@ -59,7 +60,7 @@ FIXED_RATES = {
     ('business',     'construction'): {'large': 36000, 'small': 18000},
 }
 
-JANUARY_DISCOUNT_RATE = 0.05
+JANUARY_INTEREST_RATE = 0.05   # 지방세법 §127③, 대통령령으로 정하는 이자율
 EDUCATION_TAX_RATE    = 0.30
 
 
@@ -90,16 +91,29 @@ def age_reduction_rate(age):
     return min((age - 2) * 0.05, 0.50)
 
 
-def calc_half(annual_tax, reduction):
-    """연납공제는 합산 후 총액에서 별도 차감 — 여기서는 차령경감까지만 계산."""
-    step1 = round(annual_tax / 2)
-    step2 = round(step1 * (1 - reduction))
-    edu   = round(step2 * EDUCATION_TAX_RATE)
+def calc_half(annual_tax, reduction, half):
+    """
+    반기별 세액 계산 (지방세법 §127③):
+      상반기: 반기별 산출세액 × (2~6월 일수 / 상반기 총일수) × 이자율
+      하반기: 반기별 산출세액 × 이자율 (7~12월 전체)
+    """
+    step1 = round(annual_tax / 2)                                        # 반기별 안분액
+    step2 = math.floor(step1 * (1 - reduction) / 10) * 10               # 반기별 산출세액: 10원 단위 절사
+
+    if half == 1:
+        discount = math.ceil(step2 / 6 * 5 * JANUARY_INTEREST_RATE / 10) * 10
+    else:
+        discount = math.ceil(step2 * JANUARY_INTEREST_RATE / 10) * 10   # 하반기 전체: 10원 단위 올림
+
+    step3 = step2 - discount
+    edu   = math.floor(step3 * EDUCATION_TAX_RATE / 10) * 10
     return dict(
         step1=step1,
         step2=step2,
+        discount=discount,
+        step3=step3,
         edu=edu,
-        total=step2 + edu,
+        total=step3 + edu,
         reduction_pct=round(reduction * 100),
     )
 
@@ -163,13 +177,10 @@ def calculate():
     age_h1 = vehicle_age(base_date, tax_year, half=1)
     age_h2 = vehicle_age(base_date, tax_year, half=2)
 
-    h1 = calc_half(annual_tax, age_reduction_rate(age_h1))
-    h2 = calc_half(annual_tax, age_reduction_rate(age_h2))
+    h1 = calc_half(annual_tax, age_reduction_rate(age_h1), half=1)
+    h2 = calc_half(annual_tax, age_reduction_rate(age_h2), half=2)
 
-    subtotal     = h1['total'] + h2['total']
-    # 연납공제: 2월~12월(11개월)분에만 5% 적용 — 1월분은 당월이라 공제 제외
-    discount_amt = round(subtotal * 11 / 12 * JANUARY_DISCOUNT_RATE)
-    grand_total  = subtotal - discount_amt
+    grand_total = h1['total'] + h2['total']
 
     result = dict(
         rate_display=rate_display,
@@ -177,9 +188,7 @@ def calculate():
         annual_tax=annual_tax,
         age_h1=age_h1,
         age_h2=age_h2,
-        discount_pct=round(JANUARY_DISCOUNT_RATE * 100),
-        discount_amt=discount_amt,
-        subtotal=subtotal,
+        interest_rate=round(JANUARY_INTEREST_RATE * 100),
         h1=h1,
         h2=h2,
         grand_total=grand_total,
