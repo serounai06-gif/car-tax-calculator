@@ -101,7 +101,7 @@ def calc_half(annual_tax, reduction, half):
     step2 = math.floor(step1 * (1 - reduction) / 10) * 10               # 반기별 산출세액: 10원 단위 절사
 
     if half == 1:
-        discount = math.ceil(step2 / 6 * 5 * JANUARY_INTEREST_RATE / 10) * 10
+        discount = math.ceil(step2 * 151 / 181 * JANUARY_INTEREST_RATE / 10) * 10
     else:
         discount = math.ceil(step2 * JANUARY_INTEREST_RATE / 10) * 10   # 하반기 전체: 10원 단위 올림
 
@@ -128,20 +128,34 @@ def calculate():
     body = request.get_json(silent=True) or {}
     usage        = body.get('usage', '').strip()
     vehicle_type = body.get('vehicle_type', '').strip()
-    base_date_s  = body.get('base_date', '').strip()
+    reg_date_s   = body.get('reg_date', '').strip()
+    mfg_year_raw = body.get('mfg_year')
     sub_type     = body.get('sub_type', '').strip()
     cc_raw       = body.get('cc')
 
-    if not all([usage, vehicle_type, base_date_s]):
+    if not all([usage, vehicle_type, reg_date_s]):
         return jsonify(error='모든 항목을 입력해주세요.'), 400
 
     try:
-        base_date = date.fromisoformat(base_date_s)
+        reg_date = date.fromisoformat(reg_date_s)
     except (ValueError, TypeError):
-        return jsonify(error='차령기산일이 올바르지 않습니다.'), 400
+        return jsonify(error='신규등록일이 올바르지 않습니다.'), 400
 
-    if base_date > date.today():
-        return jsonify(error='차령기산일이 미래 날짜입니다.'), 400
+    if reg_date > date.today():
+        return jsonify(error='신규등록일이 미래 날짜입니다.'), 400
+
+    # 차령기산일 결정 (자동차관리법 시행령 제3조)
+    if mfg_year_raw:
+        try:
+            mfg_year = date.fromisoformat(str(mfg_year_raw).strip()).year
+        except (ValueError, TypeError):
+            return jsonify(error='제작연월일이 올바르지 않습니다.'), 400
+        if mfg_year != reg_date.year:
+            base_date = date(mfg_year, 12, 31)   # 제작연도의 말일
+        else:
+            base_date = reg_date                  # 신규등록일
+    else:
+        base_date = reg_date                      # 제작연도 미입력 시 등록일 사용
 
     if vehicle_type == 'passenger':
         if cc_raw is None:
@@ -186,6 +200,7 @@ def calculate():
         rate_display=rate_display,
         base_display=base_display,
         annual_tax=annual_tax,
+        base_date=base_date.isoformat(),
         age_h1=age_h1,
         age_h2=age_h2,
         interest_rate=round(JANUARY_INTEREST_RATE * 100),
@@ -202,18 +217,80 @@ def calculate():
         except ValueError:
             return jsonify(error='소유권이전일자가 올바르지 않습니다.'), 400
 
-        year        = today.year
-        year_start  = date(year, 1, 1)
-        year_end    = date(year, 12, 31)
-        total_days  = (year_end - year_start).days + 1
-        refund_days = max((year_end - transfer_date).days, 0)
+        if transfer_date.year != tax_year:
+            return jsonify(error=f'소유권이전일자는 {tax_year}년이어야 합니다.'), 400
 
-        result['refund'] = dict(
-            transfer_date=transfer_date_s,
-            refund_days=refund_days,
-            total_days=total_days,
-            refund_amount=round(grand_total * refund_days / total_days),
-        )
+        year      = tax_year
+        year_end  = date(year, 12, 31)
+        year_days = (year_end - date(year, 1, 1)).days + 1
+        h1_end    = date(year, 6, 30)
+        h2_end    = date(year, 12, 31)
+        h1_days   = (h1_end - date(year, 1, 1)).days + 1
+        h2_days   = (h2_end - date(year, 7, 1)).days + 1
+
+        # 처분 시점 기분의 차령으로 방식 결정
+        transfer_age = age_h1 if transfer_date.month <= 6 else age_h2
+
+        def ceil10(x):
+            return math.ceil(x / 10) * 10
+
+        def tax_and_edu(tax):
+            return tax, ceil10(tax * EDUCATION_TAX_RATE)
+
+        if transfer_age < 3:
+            # 차령 3년 미만: 연간 총액 기준 일할계산
+            remaining_year = max((year_end - transfer_date).days + 1, 0)
+            total_tax = h1['step3'] + h2['step3']
+            tax_refund = ceil10(total_tax * remaining_year / year_days)
+            edu_refund = ceil10(tax_refund * EDUCATION_TAX_RATE)
+            result['refund'] = dict(
+                transfer_date=transfer_date_s,
+                method='annual',
+                year_days=year_days,
+                remaining_year=remaining_year,
+                tax_refund=tax_refund,
+                edu_refund=edu_refund,
+                total_refund=tax_refund + edu_refund,
+            )
+        else:
+            # 차령 3년 이상: 기분별 일할계산
+            if transfer_date.month <= 6:
+                jan_days     = 31
+                feb_jun_days = h1_days - jan_days   # 150
+
+                # 1월분 기준액 (연납공제 적용 전), 2~6월분 기준액 (연납공제 후)
+                h1_jan_base     = h1['step2'] * jan_days / h1_days
+                h1_feb_jun_base = h1['step3'] - h1_jan_base
+
+                if transfer_date.month == 1:
+                    remaining_jan = max((date(year, 1, 31) - transfer_date).days + 1, 0)
+                    h1_tax        = ceil10(h1['step2'] * remaining_jan / h1_days + h1_feb_jun_base)
+                    remaining_h1  = remaining_jan + feb_jun_days
+                else:
+                    remaining_h1  = max((h1_end - transfer_date).days + 1, 0)
+                    h1_tax        = ceil10(h1_feb_jun_base * remaining_h1 / feb_jun_days)
+
+                h1_edu = ceil10(h1_tax * EDUCATION_TAX_RATE)
+                h2_tax, h2_edu = tax_and_edu(h2['step3'])
+                remaining_h2 = None
+            else:
+                remaining_h1 = None
+                h1_tax = h1_edu = 0
+                remaining_h2 = max((h2_end - transfer_date).days + 1, 0)
+                h2_tax = ceil10(h2['step3'] * remaining_h2 / h2_days)
+                h2_edu = ceil10(h2_tax * EDUCATION_TAX_RATE)
+            result['refund'] = dict(
+                transfer_date=transfer_date_s,
+                method='half',
+                half=1 if transfer_date.month <= 6 else 2,
+                h1_days=h1_days,
+                h2_days=h2_days,
+                remaining_h1=remaining_h1,
+                remaining_h2=remaining_h2,
+                h1_tax=h1_tax, h1_edu=h1_edu, h1_refund=h1_tax + h1_edu,
+                h2_tax=h2_tax, h2_edu=h2_edu, h2_refund=h2_tax + h2_edu,
+                total_refund=h1_tax + h1_edu + h2_tax + h2_edu,
+            )
 
     return jsonify(result)
 

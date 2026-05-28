@@ -357,10 +357,16 @@
         </div>
       </div>
 
-      <!-- 차령기산일 -->
-      <div class="form-group">
-        <label for="base-date">차령기산일 <span class="hint">(최초등록일)</span></label>
-        <input type="date" id="base-date" max="{{ today }}" />
+      <!-- 최초등록일 / 제작연월일 -->
+      <div class="form-group" style="display:flex; gap:12px;">
+        <div style="flex:1">
+          <label for="reg-date">최초등록일</label>
+          <input type="date" id="reg-date" max="{{ today }}" />
+        </div>
+        <div style="flex:1">
+          <label for="mfg-year">제작연월일 <span class="hint">(다를 때만)</span></label>
+          <input type="date" id="mfg-year" max="{{ today }}" />
+        </div>
       </div>
 
       <!-- 과세표준: CC 입력 (승용차) -->
@@ -405,6 +411,7 @@
 
       <div class="meta-row">
         <div class="meta-item">적용 세율 <strong id="m-rate"></strong></div>
+        <div class="meta-item">차령기산일 <strong id="m-base-date"></strong></div>
         <div class="meta-item">상반기 차령 <strong id="m-age1"></strong></div>
         <div class="meta-item">하반기 차령 <strong id="m-age2"></strong></div>
         <div class="meta-item">연납공제율 <strong id="m-disc"></strong></div>
@@ -473,17 +480,33 @@
           <span>소유권이전일자</span>
           <span class="rv" id="r-transfer-date"></span>
         </div>
-        <div class="refund-row">
-          <span>환급 대상일수 <small style="color:#aaa">(이전일 다음날 ~ 12.31)</small></span>
-          <span class="rv" id="r-refund-days"></span>
+        <div id="r-h1-row">
+          <div class="refund-row">
+            <span id="r-h1-label"></span>
+            <span class="rv" id="r-h1-refund"></span>
+          </div>
+          <div class="refund-row" style="padding-left:1rem; color:#666; font-size:0.88rem">
+            <span>자동차세</span><span id="r-h1-tax"></span>
+          </div>
+          <div class="refund-row" style="padding-left:1rem; color:#666; font-size:0.88rem">
+            <span>지방교육세</span><span id="r-h1-edu"></span>
+          </div>
         </div>
-        <div class="refund-row">
-          <span>해당연도 총일수</span>
-          <span class="rv" id="r-total-days"></span>
+        <div id="r-h2-row">
+          <div class="refund-row">
+            <span id="r-h2-label"></span>
+            <span class="rv" id="r-h2-refund"></span>
+          </div>
+          <div class="refund-row" style="padding-left:1rem; color:#666; font-size:0.88rem">
+            <span>자동차세</span><span id="r-h2-tax"></span>
+          </div>
+          <div class="refund-row" style="padding-left:1rem; color:#666; font-size:0.88rem">
+            <span>지방교육세</span><span id="r-h2-edu"></span>
+          </div>
         </div>
         <div class="refund-row main-refund">
-          <span>환급세액</span>
-          <span class="rv" id="r-refund-amount"></span>
+          <span>환급세액 합계</span>
+          <span class="rv" id="r-total-refund"></span>
         </div>
       </div>
 
@@ -627,7 +650,8 @@
   async function calc() {
     const usage       = getUsage();
     const vehicleType = getVehicleType();
-    const baseDate    = document.getElementById('base-date').value;
+    const regDate     = document.getElementById('reg-date').value;
+    const mfgYear     = document.getElementById('mfg-year').value;
     const isCC        = vehicleType === 'passenger';
     const cc          = isCC ? document.getElementById('tax-base').value : null;
     const subType     = !isCC ? document.getElementById('sub-type').value : null;
@@ -638,10 +662,11 @@
     errEl.textContent = '';
     resultEl.classList.remove('show');
 
-    if (!baseDate) { errEl.textContent = '차령기산일을 입력해주세요.'; return; }
+    if (!regDate) { errEl.textContent = '신규등록일을 입력해주세요.'; return; }
     if (isCC && !cc) { errEl.textContent = '배기량(cc)을 입력해주세요.'; return; }
 
-    const payload = { usage, vehicle_type: vehicleType, base_date: baseDate };
+    const payload = { usage, vehicle_type: vehicleType, reg_date: regDate };
+    if (mfgYear) payload.mfg_year = mfgYear;
     if (isCC) payload.cc = parseInt(cc);
     else payload.sub_type = subType;
     if (transferDate) payload.transfer_date = transferDate;
@@ -656,10 +681,11 @@
     if (!res.ok) { errEl.textContent = data.error || '오류가 발생했습니다.'; return; }
 
     // 메타
-    document.getElementById('m-rate').textContent = data.rate_display;
-    document.getElementById('m-age1').textContent = data.age_h1 + '년';
-    document.getElementById('m-age2').textContent = data.age_h2 + '년';
-    document.getElementById('m-disc').textContent = data.interest_rate + '%';
+    document.getElementById('m-rate').textContent      = data.rate_display;
+    document.getElementById('m-base-date').textContent = data.base_date;
+    document.getElementById('m-age1').textContent      = data.age_h1 + '년';
+    document.getElementById('m-age2').textContent      = data.age_h2 + '년';
+    document.getElementById('m-disc').textContent      = data.interest_rate + '%';
 
     // 구분 라인
     document.getElementById('s-red1').textContent = '상반기 ' + data.h1.reduction_pct + '%';
@@ -688,10 +714,39 @@
     const refundBox = document.getElementById('refund-box');
     if (data.refund) {
       const r = data.refund;
-      document.getElementById('r-transfer-date').textContent  = r.transfer_date;
-      document.getElementById('r-refund-days').textContent    = r.refund_days + '일';
-      document.getElementById('r-total-days').textContent     = r.total_days + '일';
-      document.getElementById('r-refund-amount').textContent  = fmt(r.refund_amount);
+      document.getElementById('r-transfer-date').textContent = r.transfer_date;
+
+      if (r.method === 'annual') {
+        // 차령 3년 미만: 연간 일할계산
+        document.getElementById('r-h1-label').textContent  = `연간 일할환급 (잔여 ${r.remaining_year}일 / ${r.year_days}일)`;
+        document.getElementById('r-h1-refund').textContent = fmt(r.total_refund);
+        document.getElementById('r-h1-tax').textContent    = fmt(r.tax_refund);
+        document.getElementById('r-h1-edu').textContent    = fmt(r.edu_refund);
+        document.getElementById('r-h1-row').style.display  = '';
+        document.getElementById('r-h2-row').style.display  = 'none';
+      } else if (r.half === 1) {
+        // 상반기 처분: 1기분 일할 + 2기분 전액
+        document.getElementById('r-h1-label').textContent  = `1기분 환급 (잔여 ${r.remaining_h1}일 / ${r.h1_days}일)`;
+        document.getElementById('r-h1-refund').textContent = fmt(r.h1_refund);
+        document.getElementById('r-h1-tax').textContent    = fmt(r.h1_tax);
+        document.getElementById('r-h1-edu').textContent    = fmt(r.h1_edu);
+        document.getElementById('r-h2-label').textContent  = '2기분 전액 환급';
+        document.getElementById('r-h2-refund').textContent = fmt(r.h2_refund);
+        document.getElementById('r-h2-tax').textContent    = fmt(r.h2_tax);
+        document.getElementById('r-h2-edu').textContent    = fmt(r.h2_edu);
+        document.getElementById('r-h1-row').style.display  = '';
+        document.getElementById('r-h2-row').style.display  = '';
+      } else {
+        // 하반기 처분: 2기분 일할만
+        document.getElementById('r-h1-row').style.display  = 'none';
+        document.getElementById('r-h2-label').textContent  = `2기분 환급 (잔여 ${r.remaining_h2}일 / ${r.h2_days}일)`;
+        document.getElementById('r-h2-refund').textContent = fmt(r.h2_refund);
+        document.getElementById('r-h2-tax').textContent    = fmt(r.h2_tax);
+        document.getElementById('r-h2-edu').textContent    = fmt(r.h2_edu);
+        document.getElementById('r-h2-row').style.display  = '';
+      }
+
+      document.getElementById('r-total-refund').textContent = fmt(r.total_refund);
       refundBox.style.display = 'block';
     } else {
       refundBox.style.display = 'none';
